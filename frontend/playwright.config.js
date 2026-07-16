@@ -12,7 +12,10 @@ module.exports = defineConfig({
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL: 'http://127.0.0.1:3000',
-    trace: 'on-first-retry',
+    // Enable artifacts for visual auditing
+    trace: 'on', // capture full trace for every test run
+    screenshot: 'on', // capture screenshots for all steps
+    video: 'retain-on-failure', // record video and keep only when a test fails
   },
   projects: [
     {
