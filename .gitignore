@@ -11,6 +11,9 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/.DS_Store
+frontend/playwright-report/
+frontend/test-results/
+frontend/.playwright/
 
 # Backend (Maven/Spring Boot)
 backend/target/
