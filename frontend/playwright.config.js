@@ -23,8 +23,10 @@ module.exports = defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  webServer: {
-    command: 'CI=true BROWSER=none npm start',
+  webServer: process.env.PW_NO_WEBSERVER ? undefined : {
+    command: process.platform === 'win32'
+      ? 'set CI=true&& set BROWSER=none&& npm start'
+      : 'CI=true BROWSER=none npm start',
     url: 'http://127.0.0.1:3000',
     reuseExistingServer: true,
     timeout: 120 * 1000,

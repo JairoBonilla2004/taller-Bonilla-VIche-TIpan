@@ -89,7 +89,34 @@ mvn "-Dtest=CorsConfigTest,UsuarioControllerIdorTest" test
 
 ### Julio Viche
 
-_Pendiente de agregar evidencia._
+**Vulnerabilidad 5: Escalada de privilegios en la gestión de usuarios**
+**Archivo:** `backend/src/main/java/com/reservas/service/UsuarioService.java`
+
+El servicio `UsuarioService` permite crear y actualizar usuarios asignando cualquier rol (incluso `ADMINISTRADOR`) sin validar la identidad ni el rol de quien invoca la operación. Combinado con `SecurityConfig` (cualquierRequest permitAll), cualquier petición HTTP anónima puede crear una cuenta de administrador o promover a un usuario existente a `ADMINISTRADOR`.
+
+La clase `UsuarioServicePrivilegeEscalationTest` evidencia tres escenarios:
+
+1. `crearUsuario` con `rol=ADMINISTRADOR` es aceptado sin validar identidad.
+2. `actualizarUsuario` promueve a un `CLIENTE` a `ADMINISTRADOR` mediante un simple `PUT`, sin token ni verificación de rol.
+3. `eliminarUsuario` realiza un "soft delete" (solo cambia `activo=false`) sin auditoría y sin validar que el solicitante sea administrador.
+
+![Prueba unitaria UsuarioServicePrivilegeEscalationTest](16-codigo-test-usuarioservice-julio.png)
+
+**Ejecución de las pruebas:**
+
+```
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0 -- in com.reservas.service.UsuarioServicePrivilegeEscalationTest
+
+BUILD SUCCESS
+```
+
+![Consola BUILD SUCCESS](17-consola-build-success-julio.png)
+
+Comando utilizado:
+
+```
+mvn "-Dtest=UsuarioServicePrivilegeEscalationTest" test
+```
 
 ## Pruebas E2E con Playwright
 
@@ -145,4 +172,32 @@ npx playwright test
 
 ### Julio Viche
 
-_Pendiente de agregar evidencia._
+**Archivo:** `frontend/tests/vuln-usuarios-julio.spec.js`
+
+**Vulnerabilidad: Crear un usuario con rol `ADMINISTRADOR` sin autenticación**
+
+La configuración de seguridad debería rechazar la creación de administradores fuera del módulo `/api/admin`, pero no hay ningún filtro que lo impida. La prueba envía un `POST /api/usuarios` totalmente anónimo asignando `rol=ADMINISTRADOR` y el backend responde con éxito.
+
+**Vulnerabilidad: Promover un `CLIENTE` a `ADMINISTRADOR` sin autenticación**
+
+Se crea primero una víctima como `CLIENTE` y, mediante un `PUT /api/usuarios/{id}` anónimo, se le cambia el rol a `ADMINISTRADOR`. El backend acepta la modificación sin token ni verificación de rol, lo que permite a un atacante escalar privilegios sobre cuentas existentes.
+
+**Vulnerabilidad: Rechazar una reserva sin autenticación**
+
+`PUT /api/reservas/{id}/rechazar` está completamente abierto. La prueba crea una reserva cualquiera y luego la marca como `Rechazada` sin enviar cabecera `Authorization`, confirmando que cualquier persona puede modificar el estado de reservas ajenas.
+
+**Vulnerabilidad: Listar todos los usuarios sin autenticación (enumeración de cuentas)**
+
+`GET /api/usuarios` no exige autenticación. La prueba confirma que un atacante puede enumerar la base completa de usuarios (email, rol, departamento, etc.) sin credenciales.
+
+![Código de las pruebas E2E con Playwright](18-e2e-codigo-playwright-julio.png)
+
+![Resultado de ejecución de las pruebas E2E](19-e2e-resultado-playwright-julio.png)
+
+![Reporte HTML de Playwright](20-e2e-reporte-playwright-julio.png)
+
+Comando utilizado:
+
+```
+npx playwright test vuln-usuarios-julio.spec.js
+```
